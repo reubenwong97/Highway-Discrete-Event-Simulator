@@ -52,7 +52,7 @@ class Simulator(object):
         self.stations_array = [CellStation(station_id=i, num_reserve=args.num_reserve) 
                                 for i in range(args.num_stations)]
 
-        random_interarrival = Randoms.random_time()
+        random_interarrival = Randoms.random_interarrival()
         first_call_time = random_interarrival
         speed, station_id, position, duration, direction = self.generate_args()
         first_call = CallInit(first_call_time, station_id, speed, position, duration, direction)
@@ -63,7 +63,7 @@ class Simulator(object):
         self.dropped_calls = 0
         self.blocked_calls = 0
 
-    def generate_args(self) -> Tuple:
+    def generate_args(self) -> Tuple[float, int, float, float, int]:
         '''
         Helper function that helps to generate args for event instantiations.
         
@@ -76,7 +76,8 @@ class Simulator(object):
                 direction (-1 / 1): -1 for left and 1 for right
 
         '''
-        raise NotImplementedError
+        return (Randoms.random_speed(), Randoms.random_station(), Randoms.random_position(),
+            Randoms.random_duration(), Randoms.random_direction())
 
     def free_current_station(self, current_station: int, used_reserve: bool=False):
         '''
@@ -145,7 +146,7 @@ class Simulator(object):
 
     def handle_call_init(self, current_init):
         # process next initialisation event
-        inter_arrival = Randoms.random_time()
+        inter_arrival = Randoms.random_interarrival()
         next_time = current_init.time + inter_arrival
         speed, station_id, position, duration, direction = self.generate_args()
         next_init = CallInit(next_time, station_id, speed, position, duration, direction)
