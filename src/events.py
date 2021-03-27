@@ -8,19 +8,22 @@ class Event(object):
     def get_params(self):
         return [v for k, v in self.__dict__.items() if '__' not in k and 'object at' not in k]
 class CallTerminate(Event):
-    def __init__(self, time, station):
-        super().__init__(time, station)
+    def __init__(self, time, station_id):
+        super().__init__(time, station_id)
+
+    def get_params(self):
+        return self.time, self.station_id
 
 class CallHandover(Event):
-    def __init__(self, time, station, speed, duration, direction):
-        super().__init__(time, station)
+    def __init__(self, time, station_id, speed, duration, direction):
+        super().__init__(time, station_id)
         self.speed = speed
         self.duration = duration
         self.direction = direction
 
 class CallInit(Event):
-    def __init__(self, time, station, speed, position, duration, direction):
-        super().__init__(time, station)
+    def __init__(self, time, station_id, speed, position, duration, direction):
+        super().__init__(time, station_id)
         self.speed = speed
         self.position = position
         self.duration = duration
