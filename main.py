@@ -1,10 +1,11 @@
 from typing import Type
 from src.simulator import Simulator
 from src.events import Event, CallHandover, CallInit, CallTerminate
+import argparse
 
-def main():
+def main(args):
     stopping = False # placeholder for stopping condition
-    simulator = Simulator() # init simulator
+    simulator = Simulator(args) # init simulator
 
     while not stopping:
         event = simulator.FEL.dequeue()
@@ -22,5 +23,13 @@ def main():
     percent_blocked = simulator.blocked_calls / simulator.total_calls
     percent_dropped = simulator.dropped_calls / simulator.total_calls
 
+    # placeholder for stats
+    print(percent_blocked, percent_dropped)
+
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description='Process simulation args')
+    parser.add_argument('--num_reserve', default=0, type=int)
+    parser.add_argument('--num_stations', default=20, type=int)
+    args = parser.parse_args()
+
+    main(args)

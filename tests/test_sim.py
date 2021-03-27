@@ -1,4 +1,4 @@
-from src.simulator import FEL
+from src.simulator import FEL, Simulator
 from src.events import Event, CallHandover, CallInit, CallTerminate
 
 def test_FEL_list_subclassing():
@@ -58,6 +58,25 @@ def test_get_attr():
     handover = CallHandover(5, 1, 1, 1, 1)
     init = CallInit(3, 1, 1, 1, 1, 1)
 
-    assert terminate.get_params() == [10, 1]
-    assert handover.get_params() == [5, 1, 1, 1, 1]
-    assert init.get_params() == [3, 1, 1, 1, 1, 1]
+    assert terminate.get_params() == (10, 1)
+    assert handover.get_params() == (1, 1, 1, 1)
+    assert init.get_params() == (1, 1, 1, 1)
+
+def test_event_computation():
+    import argparse
+    # args = {
+    #     'use_reserve': False,
+    #     'num_stations': 20
+    # }
+    parser = argparse.ArgumentParser(description='Process simulation args')
+    parser.add_argument('--use_reserve', default=False, type=bool)
+    parser.add_argument('--num_stations', default=20, type=int)
+    args = parser.parse_args()
+
+    simulator = Simulator(args)
+    current_init = CallInit(0, 0, 1, 0, 0.5, 1)
+    speed, position, duration, direction = current_init.get_params()
+    next_event_type, _, _, _, _, _ = simulator.compute_next_event(speed, position, duration, direction, 
+        simulator.stations_array[current_init.station_id], current_init)
+
+    assert next_event_type == "Termination"

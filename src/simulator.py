@@ -26,23 +26,30 @@ class FEL(list):
         raise Exception("Pop method should not be used, use dequeue() instead")
 
 class CellStation(object):
-    def __init__(self, station_id: int, with_reserve: bool, num_channels: int=10, coverage: int=2):
+    # edited CellStation to allow for multiple reserve channels
+    def __init__(self, station_id: int, num_reserve: int, num_channels: int=10, coverage: int=2):
         self.station_id = station_id
-        self.available_channels = num_channels
-        if with_reserve:
-            self.reserve_available = True # else no such attribute, good guard 
+        # available normal channels
+        self.available_channels = num_channels - num_reserve
+        if num_reserve != 0:
+            self.reserve_available = num_reserve # else no such attribute, good guard 
         self.range = [station_id * coverage, station_id * coverage + coverage] # cell_station coverage bounds
 
     def in_range(self, end_position):
         if end_position <= self.range[1] and end_position >= self.range[0]:
             return True
-        return False    
+        return False 
+    
+    def reserve_available(self):
+        if self.reserve_available > 0:
+            return True
+        False
 
 class Simulator(object):
     def __init__(self, args):
         self.FEL = FEL() # investigate sorting by list -> list.sort(key=..., reverse=...)
         self.clock = 0
-        self.stations_array = [CellStation(station_id=i, with_reserve=args.use_reserve) 
+        self.stations_array = [CellStation(station_id=i, num_reserve=args.num_reserve) 
                                 for i in range(args.num_stations)]
 
         random_interarrival = Randoms.random_time()
@@ -70,11 +77,23 @@ class Simulator(object):
 
         '''
         raise NotImplementedError
+
+    def free_current_station(self, current_station: int, used_reserve: bool=False):
+        '''
+        Helper function to free up CellStation resource after usage. Used by Termination handler.
+            Args:
+                current_station (int): CellStation.station_id caller is currently at, and station to free
+                used_reserve (bool): Indication of whether this call was made on a reserved channel or not
+            Returns: None
+        '''
+        if used_reserve:
+            self.stations_array[current_station].reserve_available += 1
+        else:
+            self.stations_array[current_station].available_channels += 1
     
     def free_prev_station(self, current_station: int, direction: int, used_reserve: bool=False):
         '''
         Helper function to free up CellStation resource after usage.
-        
             Args:
                 current_station (int): CellStation.station_id caller is currently at
                 direction (-1 / 1): Direction of travel
@@ -83,7 +102,8 @@ class Simulator(object):
         '''
         prev_station_id = current_station - direction
         if used_reserve:
-            self.stations_array[prev_station_id].reserve_available = True
+            # implemented as int for generality
+            self.stations_array[prev_station_id].reserve_available += 1
         else:
             self.stations_array[prev_station_id].available_channels += 1
 
@@ -148,3 +168,59 @@ class Simulator(object):
                 handover_event = CallHandover(event_time, station_id, speed, remaining_duration, direction)
                 self.FEL.insert(handover_event)
         self.total_calls += 1
+
+    def handle_call_handover_no_res(self, current_handover):
+        # get current info for DOING handover
+        speed, station_id, duration, direction = current_handover.get_params()
+        position = 1 if direction == -1 else 0 # when handing over, position is always at a bound
+        self.free_prev_station(station_id, direction, used_reserve=False)
+
+        if self.stations_array[station_id].available_channels == 0:
+            self.dropped_calls += 1
+        else:
+            self.stations_array[station_id].available_channels -= 1
+            event_type, event_time, station, speed, remaining_duration, direction = \
+                self.compute_next_event(speed, position, duration, direction, self.stations_array[station_id],
+                    current_handover)
+            if event_type == "Terminate":
+                termination_event = CallTerminate(event_time, station)
+                self.FEL.insert(termination_event)
+            elif event_type == "Handover":
+                handover_event = CallHandover(event_time, station, speed, remaining_duration, direction)
+                self.FEL.insert(handover_event)
+            else:
+                raise TypeError("Wrong event type returned")
+        
+    def handle_call_handover_res(self, current_handover):
+        speed, station_id, duration, direction = current_handover.get_params()
+        position = 1 if direction == -1 else 0
+        used_reserve = getattr(current_handover, "used_reserve", False)
+        self.free_prev_station(station_id, direction, used_reserve=used_reserve)
+
+        # when call is blocked
+        if self.stations_array[station_id].available_channels == 0 and \
+            (not self.stations_array[station_id].reserve_available()):
+            self.dropped_calls += 1
+        # One type of channel is available, find out which
+        else:
+            if self.stations_array[station_id].available_channels == 0:
+                self.stations_array[station_id].reserve_available -= 1
+                used_reserve = True
+            else:
+                self.stations_array[station_id].available_channels -= 1
+                used_reserve = False
+            # accepted call with known channel type now to be processed
+            event_type, event_time, station, speed, remaining_duration, directon = \
+                self.compute_next_event(speed, position, duration, direction, self.stations_array[station_id],
+                    current_handover)
+            if event_type == "Terminate":
+                termination_event = CallTerminate(event_time, station, used_reserve)
+                self.FEL.insert(termination_event)
+            elif event_type == "Handover":
+                handover_event = CallHandover(event_time, station, speed, remaining_duration, direction, used_reserve)
+                self.FEL.insert(handover_event)
+
+    def handle_call_termination(self, current_termination):
+        time, station_id = current_termination.get_params()
+        used_reserve = getattr(current_termination, "used_reserve", False)
+        self.free_current_station(station_id, used_reserve)
