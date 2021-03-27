@@ -9,14 +9,17 @@ def main(args):
 
     while not stopping:
         event = simulator.FEL.dequeue()
-        clock = event.time
+        simulator.clock = event.time # advance clock to event
 
         if isinstance(event, CallInit):
-            pass
+            simulator.handle_call_init(event)
         elif isinstance(event, CallHandover):
-            pass
+            if args.num_reserve == 0:
+                simulator.handle_call_handover_no_res(event)
+            else:
+                simulator.handle_call_handover_res(event)
         elif isinstance(event, CallTerminate):
-            pass
+            simulator.handle_call_termination(event)
         else:
             raise TypeError("Wrong event type in FEL")
 

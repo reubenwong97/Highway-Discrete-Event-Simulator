@@ -11,6 +11,7 @@ class Event(object):
 class CallTerminate(Event):
     def __init__(self, time, station_id, used_reserve=False):
         super().__init__(time, station_id)
+        self.used_reserve = used_reserve # retrieve with getattr
 
     def get_params(self):
         return self.time, self.station_id
