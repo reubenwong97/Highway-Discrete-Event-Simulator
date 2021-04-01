@@ -31,6 +31,7 @@ class CellStation(object):
         self.station_id = station_id
         # available normal channels
         self.available_channels = num_channels - num_reserve
+        self.coverage = coverage
         if num_reserve != 0:
             self.reserve_available = num_reserve # else no such attribute, good guard 
         self.range = [station_id * coverage, station_id * coverage + coverage] # cell_station coverage bounds
@@ -126,7 +127,7 @@ class Simulator(object):
                     Tuple of information for the future event. Type, next_event_time and next_station_id are fixed returns. 
         '''
         total_distance = speed * duration
-        absolute_position = (current_station.station_id + position) * current_station.range
+        absolute_position = (current_station.station_id + position) * current_station.coverage
         end_position = absolute_position + direction * total_distance
         next_station_id = current_station.station_id + direction
         
@@ -143,7 +144,7 @@ class Simulator(object):
             # if the call ends within current station or exceeds the highway, terminate
             termination_time = next_event_time
             # return termination flag for appropriate event generation
-            return ("Termination", termination_time, current_station.station_id, None, None, None) # None returns for consistency
+            return ("Terminate", termination_time, current_station.station_id, None, None, None) # None returns for consistency
 
         return ("Handover", next_event_time, next_station_id, speed, remaining_duration, direction)
 
