@@ -51,8 +51,9 @@ class Simulator(object):
         self.clock = 0
         self.stations_array = [CellStation(station_id=i, num_reserve=args.num_reserve) 
                                 for i in range(args.num_stations)]
+        self.rng = Randoms()
 
-        random_interarrival = Randoms.random_interarrival()
+        random_interarrival = self.rng.random_interarrival()
         first_call_time = random_interarrival
         speed, station_id, position, duration, direction = self.generate_args()
         first_call = CallInit(first_call_time, station_id, speed, position, duration, direction)
@@ -76,8 +77,8 @@ class Simulator(object):
                 direction (-1 / 1): -1 for left and 1 for right
 
         '''
-        return (Randoms.random_speed(), Randoms.random_station(), Randoms.random_position(),
-            Randoms.random_duration(), Randoms.random_direction())
+        return (self.rng.random_speed(), self.rng.random_station(), self.rng.random_position(),
+            self.rng.random_duration(), self.rng.random_direction())
 
     def free_current_station(self, current_station: int, used_reserve: bool=False):
         '''
@@ -128,31 +129,35 @@ class Simulator(object):
         absolute_position = (current_station.station_id + position) * current_station.range
         end_position = absolute_position + direction * total_distance
         next_station_id = current_station.station_id + direction
-
-        if current_station.in_range(end_position) or next_station_id < 0 or next_station_id > 19:
-            # if the call ends within current station or exceeds the highway, terminate
-            termination_time = self.clock + duration
-            # return termination flag for appropriate event generation
-            return ("Termination", termination_time, current_station.station_id, None, None, None) # None returns for consistency
         
         boundary_index = max(0, direction)
         boundary_position = current_station.range[boundary_index]
         d = abs(absolute_position - boundary_position)
-        #! Clarify on data type, this could easily be a non-integer
-        time_to_next = d / speed
+        time_to_next = d / speed # time can be float
         remaining_duration = current_event.duration - time_to_next
         next_event_time = self.clock + time_to_next
+
+        #! Repositioned after time checking
+        if current_station.in_range(end_position) or next_station_id < 0 or next_station_id > 19 or \
+            remaining_duration <= 0: # additional guard just in case (but should be caught by end_position)
+            # if the call ends within current station or exceeds the highway, terminate
+            termination_time = next_event_time
+            # return termination flag for appropriate event generation
+            return ("Termination", termination_time, current_station.station_id, None, None, None) # None returns for consistency
+
         return ("Handover", next_event_time, next_station_id, speed, remaining_duration, direction)
 
     def handle_call_init(self, current_init):
         # process next initialisation event
-        inter_arrival = Randoms.random_interarrival()
+        inter_arrival = self.rng.random_interarrival()
         next_time = current_init.time + inter_arrival
         speed, station_id, position, duration, direction = self.generate_args()
         next_init = CallInit(next_time, station_id, speed, position, duration, direction)
         self.FEL.insert(next_init)
 
         # process current intialisation event
+        # available channels are handled seperately from reserved channels
+        # i.e. if the available_channels = 10 - num_reserve
         if self.stations_array[current_init.station_id].available_channels == 0:
             self.blocked_calls += 1
         else:
@@ -204,9 +209,11 @@ class Simulator(object):
             self.dropped_calls += 1
         # One type of channel is available, find out which
         else:
+            # no free regular channels, use reserved channels
             if self.stations_array[station_id].available_channels == 0:
                 self.stations_array[station_id].reserve_available -= 1
                 used_reserve = True
+            # regular channels available
             else:
                 self.stations_array[station_id].available_channels -= 1
                 used_reserve = False
@@ -222,6 +229,6 @@ class Simulator(object):
                 self.FEL.insert(handover_event)
 
     def handle_call_termination(self, current_termination):
-        time, station_id = current_termination.get_params()
+        _, station_id = current_termination.get_params()
         used_reserve = getattr(current_termination, "used_reserve", False)
         self.free_current_station(station_id, used_reserve)

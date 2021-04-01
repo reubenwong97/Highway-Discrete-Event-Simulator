@@ -2,6 +2,7 @@ from typing import Type
 from src.simulator import Simulator
 from src.events import Event, CallHandover, CallInit, CallTerminate
 import argparse
+import logging
 
 def main(args):
     stopping = False # placeholder for stopping condition
