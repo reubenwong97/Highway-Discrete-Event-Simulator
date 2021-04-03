@@ -7,11 +7,11 @@ class FEL(list):
         super(FEL, self).__init__()
 
     # comparator function
-    def _compare_time(self, event: Event):
+    def _compare_time(self, event: Event) -> float:
         return event.time
 
     # override list inserts
-    # may be slow, maybe optimise later
+    # sorts should be fast since list typically doesnt get too large
     def insert(self, event: Event):
         if not isinstance(event, Event):
             raise TypeError
@@ -64,6 +64,10 @@ class Simulator(object):
         self.total_calls = 0
         self.dropped_calls = 0
         self.blocked_calls = 0
+
+        # for debugging
+        self.init_handover = 0
+        self.handover_handover = 0
 
     def generate_args(self) -> Tuple[float, int, float, float, int]:
         '''
@@ -150,6 +154,7 @@ class Simulator(object):
 
     def handle_call_init(self, current_init):
         # process next initialisation event
+        assert self.clock == current_init.time # assert advancement of clock
         inter_arrival = self.rng.random_interarrival()
         next_time = current_init.time + inter_arrival
         speed, station_id, position, duration, direction = self.generate_args()
@@ -172,11 +177,13 @@ class Simulator(object):
                 self.FEL.insert(termination_event)
             else:
                 assert event_type == 'Handover'
+                self.init_handover += 1
                 handover_event = CallHandover(event_time, station_id, speed, remaining_duration, direction)
                 self.FEL.insert(handover_event)
-        self.total_calls += 1
+        self.total_calls += 1 # as long as they tried, call attempt made
 
     def handle_call_handover_no_res(self, current_handover):
+        assert self.clock == current_handover.time
         # get current info for DOING handover
         speed, station_id, duration, direction = current_handover.get_params()
         position = 1 if direction == -1 else 0 # when handing over, position is always at a bound
@@ -193,12 +200,14 @@ class Simulator(object):
                 termination_event = CallTerminate(event_time, station)
                 self.FEL.insert(termination_event)
             elif event_type == "Handover":
+                self.handover_handover += 1
                 handover_event = CallHandover(event_time, station, speed, remaining_duration, direction)
                 self.FEL.insert(handover_event)
             else:
                 raise TypeError("Wrong event type returned")
         
     def handle_call_handover_res(self, current_handover):
+        assert self.clock == current_handover.time
         speed, station_id, duration, direction = current_handover.get_params()
         position = 1 if direction == -1 else 0
         used_reserve = getattr(current_handover, "used_reserve", False)
@@ -206,7 +215,7 @@ class Simulator(object):
 
         # when call is blocked
         if self.stations_array[station_id].available_channels == 0 and \
-            (not self.stations_array[station_id].reserve_available()):
+            (not self.stations_array[station_id].reserve_available()): # reserve available if I have > 0 reserve available
             self.dropped_calls += 1
         # One type of channel is available, find out which
         else:
@@ -230,6 +239,7 @@ class Simulator(object):
                 self.FEL.insert(handover_event)
 
     def handle_call_termination(self, current_termination):
+        assert self.clock == current_termination.time
         _, station_id = current_termination.get_params()
         used_reserve = getattr(current_termination, "used_reserve", False)
         self.free_current_station(station_id, used_reserve)
