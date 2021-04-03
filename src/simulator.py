@@ -69,6 +69,11 @@ class Simulator(object):
         self.init_handover = 0
         self.handover_handover = 0
 
+    def reset(self):
+        self.total_calls = 0
+        self.dropped_calls = 0
+        self.blocked_calls = 0
+
     def generate_args(self) -> Tuple[float, int, float, float, int]:
         '''
         Helper function that helps to generate args for event instantiations.
