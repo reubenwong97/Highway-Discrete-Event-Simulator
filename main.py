@@ -5,70 +5,37 @@ import argparse
 import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+from run import run
+import multiprocessing as mp
+from functools import partial
 
 def main(args):
-    run_name = 'no_res' if args.num_reserve == 0 else str(args.num_reserve)+'res'
-    np.random.seed(args.seed)
-    simulator = Simulator(args) # init simulator
+    seeds = list(np.random.randint(1, 20381, size=args.reps))
+    with mp.Manager() as manager:
+        shared_blocked = manager.list()
+        shared_dropped = manager.list()
+        # processes = []
 
-    # capture stats
-    global_blocked_arr = []
-    global_dropped_arr = []
-    # clock_times = []
-    # num_inits = num_handover = num_terminate = 0
+        run_func = partial(run, args, shared_blocked, shared_dropped)
+        with mp.Pool(processes=4) as pool:
+            pool.map(run_func, seeds)
 
-    for rep in tqdm(range(0, args.reps)):
-        blocked_arr = []
-        dropped_arr = []
-        num_inits = num_handover = num_terminate = 0
-        warmed_up = False
-        for step in tqdm(range(0, args.steps), leave=False):
-            # reset stat counters
-            if step > args.warmup and not warmed_up:
-                simulator.reset()
-                warmed_up = True
+        # for i in range(args.reps):
+        #     p = mp.Process(target=run, args=(args, shared_blocked, shared_dropped, seeds[i]))
+        #     p.start()
+        #     processes.append(p)
 
-            event = simulator.FEL.dequeue()
-            simulator.clock = event.time # advance clock to event
-            # clock_times.append(simulator.clock)
+        # [p.join() for p in processes]
 
-            if isinstance(event, CallInit):
-                simulator.handle_call_init(event)
-                num_inits += 1
-            elif isinstance(event, CallHandover):
-                num_handover += 1
-                if args.num_reserve == 0:
-                    simulator.handle_call_handover_no_res(event)
-                else:
-                    simulator.handle_call_handover_res(event)
-            elif isinstance(event, CallTerminate):
-                num_terminate += 1
-                simulator.handle_call_termination(event)
-            else:
-                raise TypeError("Wrong event type in FEL")
+        shared_blocked = list(shared_blocked)
+        shared_dropped = list(shared_dropped)
 
-            if warmed_up:
-                percent_blocked = (simulator.blocked_calls / simulator.total_calls) * 100
-                percent_dropped = (simulator.dropped_calls / simulator.total_calls) * 100
-                blocked_arr.append(percent_blocked)
-                dropped_arr.append(percent_dropped)
+        print(shared_blocked)
+        print(shared_dropped)
 
-        # average stats for a repitition
-        global_blocked_arr.append(np.mean(blocked_arr))
-        global_dropped_arr.append(np.mean(dropped_arr))
+        np.save(f'./results/reps_{args.reps}_blocked.npy', shared_blocked)
+        np.save(f'./results/reps_{args.reps}_dropped.npy', shared_dropped)
 
-    # Handover count discrepancy could be due to simulation terminating since I count handovers when they are dequeued
-    # and count the transitions when created
-    # print(f"""Inits: {num_inits}, Handovers: {num_handover}, Terminates: {num_terminate}, Blocked: {simulator.blocked_calls} 
-    #           Dropped: {simulator.dropped_calls}, Init2Handover: {simulator.init_handover}, Handover2Handover: {simulator.handover_handover}
-    #           Length of FEL: {len(simulator.FEL)}""")
-
-    # placeholder for stats
-    np.save(f'./results/{run_name}_blocked.npy', blocked_arr)
-    np.save(f'./results/{run_name}_dropped.npy', dropped_arr)
-
-    # blocked_percents = list(map(lambda x: x*100, blocked_arr))
-    # dropped_percents = list(map(lambda x: x*100, dropped_arr))
 
     # fig, ax = plt.subplots()
 
@@ -96,7 +63,7 @@ if __name__ == '__main__':
     parser.add_argument('--warmup', default=600000, type=int, help='Number of steps to warm up a run')
     parser.add_argument('--steps', default=700000, type=int, help='Steps taken in a single simulation run')
     parser.add_argument('--reps', default=10, type=int, help='Number of repitions of simulation runs (n) in lectures')
-    parser.add_argument('--sets', default=10, type=int, help='Number of sets of repitions (m) in lectures')
+    # parser.add_argument('--sets', default=10, type=int, help='Number of sets of repitions (m) in lectures')
     args = parser.parse_args()
 
     main(args)

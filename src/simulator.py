@@ -52,7 +52,7 @@ class Simulator(object):
         self.clock = 0
         self.stations_array = [CellStation(station_id=i, num_reserve=args.num_reserve) 
                                 for i in range(args.num_stations)]
-        self.rng = Randoms()
+        self.rng = Randoms(args.seed)
 
         random_interarrival = self.rng.random_interarrival()
         first_call_time = random_interarrival

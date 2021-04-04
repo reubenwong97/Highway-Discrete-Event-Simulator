@@ -3,8 +3,11 @@ from scipy import stats
 
 class Randoms(object):
     # NOTE: All distributions valid at critical value 0.05
-    def __init__(self):
+    def __init__(self, seed):
         self.expon = stats.expon
+        self.seed = seed
+        np.random.seed(self.seed)
+        # print(f"Rng created with seed: {seed}")
 
     def random_interarrival(self, beta=1.369817):
         # Verified
