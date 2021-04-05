@@ -1,0 +1,10 @@
+Displaying arrays
+Drop array: [1.81550258 1.66436476 1.73035399 1.81203227]
+Block array: [1.10358829 1.17133634 1.03183487 1.11170578]
+Displaying statistics
+Mean drop rate: 1.7555634017457753
+Variance of drop rate: 0.005244715475850921
+Standard deviation of drop rate: 0.0724204078685761
+Mean of block rate: 1.1046163205040431
+Variance of block rate: 0.0032666724141774523
+Standard deviation of block rate: 0.05715481094516412

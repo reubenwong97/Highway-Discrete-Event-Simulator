@@ -33,7 +33,7 @@ class CellStation(object):
         self.available_channels = num_channels - num_reserve
         self.coverage = coverage
         if num_reserve != 0:
-            self.reserve_available = num_reserve # else no such attribute, good guard 
+            self.free_reserve = num_reserve # else no such attribute, good guard 
         self.range = [station_id * coverage, station_id * coverage + coverage] # cell_station coverage bounds
 
     def in_range(self, end_position):
@@ -42,9 +42,9 @@ class CellStation(object):
         return False 
     
     def reserve_available(self):
-        if self.reserve_available > 0:
+        if self.free_reserve > 0:
             return True
-        False
+        return False
 
 class Simulator(object):
     def __init__(self, args):
@@ -70,7 +70,7 @@ class Simulator(object):
         self.handover_handover = 0
 
     def reset(self):
-        self.total_calls = 0
+        self.total_calls = 1 # small offset to prevent division by 0
         self.dropped_calls = 0
         self.blocked_calls = 0
 
@@ -99,7 +99,7 @@ class Simulator(object):
             Returns: None
         '''
         if used_reserve:
-            self.stations_array[current_station].reserve_available += 1
+            self.stations_array[current_station].free_reserve += 1
         else:
             self.stations_array[current_station].available_channels += 1
     
@@ -115,7 +115,7 @@ class Simulator(object):
         prev_station_id = current_station - direction
         if used_reserve:
             # implemented as int for generality
-            self.stations_array[prev_station_id].reserve_available += 1
+            self.stations_array[prev_station_id].free_reserve += 1
         else:
             self.stations_array[prev_station_id].available_channels += 1
 
@@ -226,7 +226,7 @@ class Simulator(object):
         else:
             # no free regular channels, use reserved channels
             if self.stations_array[station_id].available_channels == 0:
-                self.stations_array[station_id].reserve_available -= 1
+                self.stations_array[station_id].free_reserve -= 1
                 used_reserve = True
             # regular channels available
             else:
