@@ -17,8 +17,6 @@ def main(args):
     np.random.seed(args.seed)
     seeds = list(np.random.randint(1, 20381, size=args.reps))
     print(f'Seeds: {seeds}')
-    processes = []
-    # global_count = mp.Value('i', 0)
     with mp.Manager() as manager:
         shared_blocked = manager.list()
         shared_dropped = manager.list()

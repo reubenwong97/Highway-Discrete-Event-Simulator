@@ -1,14 +1,9 @@
-from typing import Type
 from src.simulator import Simulator
 from src.events import Event, CallHandover, CallInit, CallTerminate
 import argparse
 import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-from src.runner import run
-import multiprocessing as mp
-from functools import partial
-from concurrent.futures import ProcessPoolExecutor
 
 def main(args):
     # set the base seed
@@ -94,8 +89,6 @@ def main(args):
     # fig.savefig(f'./images/{run_name}_stats.png')
 
 if __name__ == '__main__':
-    mp.set_start_method('spawn')
-
     parser = argparse.ArgumentParser(description='Process simulation args')
     parser.add_argument('--num_reserve', default=0, type=int, help='The number of reserve channels')
     parser.add_argument('--num_stations', default=20, type=int, help='Number of stations along the highway')
