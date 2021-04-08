@@ -38,12 +38,11 @@ class Randoms(object):
         # u = np.random.uniform()
         # return -beta * np.log(1 - u)
 
-        # scipy produces a better fit
-        # NOTE: it is extremely harmful to not shift the distributions -> our data starts from 12...
-        # so if we do not shift the distribution, there is a huge D due to the initial few numbers
+        # NOTE: our data starts from 12...-> not shifting the distribution fails the KStest
+        # as there is a huge D due to the initial few numbers
         # we accumulate a huge amount of probability in the range 0 - 12, leading us to have a huge D
-        # and a distribution that does not pass the KStest
-        # using scipy's module makes this way better, params[0] does this shifting
+        # using scipy's module makes this  better, params[0] does this shifting
+        # although the distributions end up looking very similar, this is used as it is more correct
         params = (10.003951603252272, 99.83194913549542)
         # Verified
         # KstestResult(statistic=0.005854123916584519, pvalue=0.8809285916372338)
@@ -58,4 +57,5 @@ class Randoms(object):
         '''
         # Verified
         # Power_divergenceResult(statistic=25.656000000000002, pvalue=0.14006290765463547)
+        # indexes 0 to 19 for our 20 stations
         return np.random.randint(low, high)
