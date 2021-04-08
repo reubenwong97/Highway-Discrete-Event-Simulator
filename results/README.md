@@ -14,6 +14,8 @@ We performed 32 independent experiments with 2 reserve channels. Hence, to analy
 python analyse.py --reps 32 --num_reserve 2
 ```
 
+Output of this analysis will be found in the `text_results/` directory.
+
 Text results come in the following format:
 ```
 ------------------- Displaying arrays -------------------
