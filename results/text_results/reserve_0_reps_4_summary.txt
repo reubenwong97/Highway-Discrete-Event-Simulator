@@ -1,17 +1,18 @@
+Level of significance alpha chosen: 0.05
 ------------------- Displaying arrays -------------------
-Drop array: [1.81550258 1.66436476 1.73035399 1.81203227]
-Block array: [1.10358829 1.17133634 1.03183487 1.11170578]
+Drop array: [1.94685235 1.9637676  1.8612762  1.68401606]
+Block array: [1.06579508 1.19949048 1.22424286 1.08714961]
 ---------------------------------------------------------
 ----------------- Displaying statistics -----------------
 |---------------- Drop Rate ----------------------------|
-Mean drop rate: 1.7555634017457753
-Variance of drop rate: 0.005244715475850921
-Standard deviation of drop rate: 0.0724204078685761
-Half-width of drop rate: 0.1152370297242647
+Mean drop rate: 1.8639780538865849
+Variance of drop rate: 0.0164065743911686
+Standard deviation of drop rate: 0.12808815086169603
+Half-width of drop rate: 0.2038168312302489
 ---------------------------------------------------------
 |---------------- Block Rate ---------------------------|
-Mean of block rate: 1.1046163205040431
-Variance of block rate: 0.0032666724141774523
-Standard deviation of block rate: 0.05715481094516412
-Half-width of block rate: 0.09094605846082905
+Mean of block rate: 1.144169507021759
+Variance of block rate: 0.006288656896602677
+Standard deviation of block rate: 0.07930105230451029
+Half-width of block rate: 0.12618567045582144
 ---------------------------------------------------------

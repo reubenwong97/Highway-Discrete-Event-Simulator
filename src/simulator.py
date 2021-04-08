@@ -70,7 +70,7 @@ class Simulator(object):
         self.handover_handover = 0
 
     def reset(self):
-        self.total_calls = 1 # small offset to prevent division by 0
+        self.total_calls = 0 # no longer counting step-by-step, offset not required
         self.dropped_calls = 0
         self.blocked_calls = 0
 

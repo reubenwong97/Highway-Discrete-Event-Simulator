@@ -24,7 +24,7 @@ def main(args):
         run_func = partial(run, args, shared_blocked, shared_dropped)
         with mp.get_context('spawn').Pool(processes=args.workers) as pool:
             assert len(seeds) == args.reps
-            pool.map(run_func, seeds)
+            r = list(tqdm(pool.imap(run_func, seeds), total=len(seeds)))
 
         shared_blocked = list(shared_blocked)
         shared_dropped = list(shared_dropped)

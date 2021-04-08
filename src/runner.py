@@ -8,16 +8,21 @@ def run(args, shared_blocked, shared_dropped, run_seed):
     simulator = Simulator(args) # init simulator
 
     # capture stats
-    blocked_arr = []
-    dropped_arr = []
+    # step-wise statistics no longer required
+    # blocked_arr = []
+    # dropped_arr = []
     num_inits = num_handover = num_terminate = 0
     warmed_up = False
 
     for step in range(args.steps):
         if step > args.warmup and not warmed_up:
-            # print('Simulator reset')
             simulator.reset()
             warmed_up = True
+            # print('Simulator reset')
+            # print(f'Total Calls: {simulator.total_calls}')
+            # print(f'Blocked Calls: {simulator.blocked_calls}')
+            # print(f'Dropped Calls: {simulator.dropped_calls}')
+            # print('Leaving simulator reset')
 
         event = simulator.FEL.dequeue()
         simulator.clock = event.time # advance clock to event
@@ -37,16 +42,22 @@ def run(args, shared_blocked, shared_dropped, run_seed):
         else:
             raise TypeError("Wrong event type in FEL")
 
-        if warmed_up: # only start collecting when warmed up
-            assert simulator.total_calls != 0
-            percent_blocked = (simulator.blocked_calls / simulator.total_calls) * 100
-            percent_dropped = (simulator.dropped_calls / simulator.total_calls) * 100
-            blocked_arr.append(percent_blocked)
-            dropped_arr.append(percent_dropped)
+        # if warmed_up: # only start collecting when warmed up
+        #     assert simulator.total_calls != 0
+        #     percent_blocked = (simulator.blocked_calls / simulator.total_calls) * 100
+        #     percent_dropped = (simulator.dropped_calls / simulator.total_calls) * 100
+        #     blocked_arr.append(percent_blocked)
+        #     dropped_arr.append(percent_dropped)
 
-    mean_blocked = np.mean(blocked_arr)
-    mean_dropped = np.mean(dropped_arr)
+    # compute final run statistics
+    # for debugging
+    # print(f'Total Calls: {simulator.total_calls}')
+    # print(f'Blocked Calls: {simulator.blocked_calls}')
+    # print(f'Dropped Calls: {simulator.dropped_calls}')
+
+    run_blocked = (simulator.blocked_calls / simulator.total_calls) * 100
+    run_dropped = (simulator.dropped_calls / simulator.total_calls) * 100
 
     # store results in shared list
-    shared_blocked.append(mean_blocked)
-    shared_dropped.append(mean_dropped)
+    shared_blocked.append(run_blocked)
+    shared_dropped.append(run_dropped)
