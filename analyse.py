@@ -24,6 +24,7 @@ def analyse(args):
     var_blocked = np.sum((blocked_arr-mean_blocked)**2) / (len(blocked_arr)-1)
     
     with open(out_file, 'w') as f:
+        f.write(f'Level of significance alpha chosen: {args.alpha}\n')
         f.write('------------------- Displaying arrays -------------------\n')
         f.write(f'Drop array: {dropped_arr}\n')
         f.write(f'Block array: {blocked_arr}\n')
