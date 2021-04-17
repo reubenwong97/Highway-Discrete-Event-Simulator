@@ -2,6 +2,10 @@
 This repository provides a simple simulation for testing the amount of dropped or blocked calls given a channel reservation schema.
 
 # Running code
+Clone this repository and enter the directory with the following command:
+```bash
+git clone https://github.com/reubenwong97/highway_calls_simulation.git && cd highway_calls_simulation
+```
 There are multiple ways for running the simulation. 
 First, if you wish to run in serial mode for debugging, run the following:
 ```bash
